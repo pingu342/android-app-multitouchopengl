@@ -470,6 +470,9 @@ class GLView extends GLSurfaceView implements GestureDetector.OnGestureListener,
 
 		if (e.getPointerCount() == 1) {
 
+			/*sakamo
+			 * 今回のタッチ位置を取得
+			 * Viewの左上が原点(0,0) */
 			TouchPoint touchPoint = new TouchPoint(e.getX(), e.getY());
 			Log.d("sakalog", "touchPoint=" + touchPoint + " thread=" + Thread.currentThread().getName());
 
@@ -479,10 +482,15 @@ class GLView extends GLSurfaceView implements GestureDetector.OnGestureListener,
 				Log.d("sakalog", "touchDrawTextureRectCoord=" + touchDrawTextureRectCoord + " thread=" + Thread.currentThread().getName());
 				switch (e.getAction()) {
 					case MotionEvent.ACTION_MOVE:
+						/*sakamo
+						 * 前回と今回のタッチ位置の距離（すなわち、指の移動距離）を算出 */
 						TouchDistance td = mTouch.makeTouchDistance(touchPoint);
 						Log.d("sakalog", "distance=" + td + " thread=" + Thread.currentThread().getName());
-						if (!mSkipOffsetDrawRect) 
+						/*sakamo
+						 * 拡大縮小を行った直後は移動しない */
+						if (!mSkipOffsetDrawRect) {
 							mRenderer.moveDrawTextureRect(td);
+						}
 						mSkipOffsetDrawRect = false;
 						break;
 
@@ -496,6 +504,8 @@ class GLView extends GLSurfaceView implements GestureDetector.OnGestureListener,
 				}
 			}
 
+			/*sakamo
+			 * 今回のタッチ位置を保持 */
 			mTouch.touchPoint = touchPoint;
 
 		} else if (e.getPointerCount() == 2) {
@@ -505,14 +515,20 @@ class GLView extends GLSurfaceView implements GestureDetector.OnGestureListener,
 			int pointIndex1 = e.findPointerIndex(pointId1);
 			int pointIndex2 = e.findPointerIndex(pointId2);
 
+			/*sakamo
+			 * 今回の2つのタッチ位置の距離（すなわち、2つの指の距離）を算出 */
 			double distance = Math.pow((e.getX(pointIndex2) - e.getX(pointIndex1)), 2.0f) +
 				Math.pow((e.getY(pointIndex2) - e.getY(pointIndex1)), 2.0f);
 
+			/*sakamo
+			 * 今回の2つのタッチ位置の中間の位置（すなわち、2つの指の中間の位置）を算出 */
 			TouchPoint touchPoint = new TouchPoint(
 					(e.getX(pointIndex2) + e.getX(pointIndex1)) / 2.0f,
 					(e.getY(pointIndex2) + e.getY(pointIndex1)) / 2.0f);
 			Log.d("sakalog", "touchPoint=" + touchPoint + " thread=" + Thread.currentThread().getName());
 
+			/*sakamo
+			 * 今回の2つのタッチ位置の中間の位置を、テキスチャ座標へ変換（テキスチャ領域外の場合はnullが返る） */
 			Coord2D textureCoordTouched = mRenderer.makeCoord2DDrawTextureRectTouched(touchPoint);
 
 			if (textureCoordTouched != null) {
@@ -520,15 +536,24 @@ class GLView extends GLSurfaceView implements GestureDetector.OnGestureListener,
 				switch (e.getAction()) {
 					case MotionEvent.ACTION_MOVE:
 //					Log.d("sakalog", "distance=" + distance + " thread=" + Thread.currentThread().getName());
+						
+						/*sakamo
+						 * 今回の2つのタッチ位置の距離が、前回より短くなった場合は縮小
+						 * 逆の場合は拡大 */
 						if (mTouch.multiTouchDistance > distance)
 							mRenderer.scaleDownDrawRect(textureCoordTouched);
 						else
 							mRenderer.scaleUpDrawRect(textureCoordTouched);
+
+						/*sakamo
+						 * 拡大縮小時の表示を安定させる */
 						mSkipOffsetDrawRect = true;
 						break;
 				}
 			}
 
+			/*sakamo
+			 * 今回の2つのタッチ位置の距離を保存*/
 			mTouch.multiTouchDistance = distance;
 		}
 
